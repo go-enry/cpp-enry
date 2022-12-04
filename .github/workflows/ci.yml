@@ -1,0 +1,41 @@
+name: Build and test
+on: [ push ]
+
+jobs:
+  test:
+    name: CC=${{ matrix.cxx }}, ${{ matrix.go }}, ${{ matrix.os }}
+    strategy:
+      matrix:
+        include: [
+          { os: ubuntu-latest, cxx: g++,     go: 1.19.x },
+          { os: ubuntu-latest, cxx: clang++, go: 1.19.x},
+        ]
+    runs-on: ${{ matrix.os }}
+    env:
+      CXX: ${{ matrix.cxx }}
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - uses: actions/setup-go@v3
+      with:
+        go-version: ${{ matrix.go }}
+
+    - name: Apt-get install
+      run: |
+        sudo apt-get update
+        sudo apt-get install gcc-multilib
+        sudo apt-get install valgrind
+
+    - name: Build go-enry as a (static) C library
+      run: |
+        cd go-enry
+        go build -buildmode=c-archive -o go-enry.a ./shared/enry.go
+        cd ..
+
+    - name: Test with C++ bindings
+      run: |
+        g++ enry_test.cpp ./go-enry/go-enry.a --std=c++17 -O2 -Wall -I. -I./go-enry -lpthread
+        valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./a.out
