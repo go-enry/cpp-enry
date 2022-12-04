@@ -20,5 +20,9 @@ int main()
     std::tie(lang, safe) = enry::GetLanguageByExtension("enry.h"); // C false
     assert(!safe && lang.compare("C") == 0);
 
+    auto langs = enry::GetLanguagesByModeline("modeline", "/* vim: set syntax=python ft   =python filetype=python */", { "python", "vim" });
+    assert(langs.size() != 0);
+    assert(langs.at(0).compare("Python") == 0);
+
     return 0;
 }

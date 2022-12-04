@@ -51,3 +51,4 @@ massif.*
 # CMake
 CMakeScripts
 *.cmake
+*.plist

@@ -3,7 +3,6 @@
 
 #include <go-enry.h>
 
-#include <cstring>
 #include <string_view>
 #include <string>
 #include <tuple>
@@ -42,23 +41,12 @@ inline std::vector<std::string> from_GoStringSlice(const GoSlice& go_slice)
 
 inline GoSlice to_GoStringSlice(const std::initializer_list<std::string>& lst)
 {
-    constexpr std::size_t go_string_size = sizeof(GoString);
     const std::size_t lst_size = lst.size();
     GoSlice go_slice = {
-        .data = calloc(lst_size, go_string_size),
+        .data = const_cast<char*>(lst.begin()->data()),
         .len = static_cast<GoInt>(lst_size),
         .cap = static_cast<GoInt>(lst_size)
     };
-
-    for (std::size_t i = 0; i < lst_size; ++i) {
-        const auto str = lst.begin() + i;
-        GoString go_string = {
-            .p = str->c_str(),
-            .n = static_cast<ptrdiff_t>(str->length())
-        };
-
-        memcpy(reinterpret_cast<char*>(go_slice.data) + (i * go_string_size), &go_string, go_string_size);
-    }
     return go_slice;
 }
 
@@ -134,9 +122,6 @@ std::vector<std::string> GetLanguagesByContent(std::string_view filename, std::s
     GoSlice go_slice{};
     GetLanguagesByContent(to_GoString(filename), to_GoByteSlice(content), go_candidates, &go_slice);
     std::vector<std::string> vec = from_GoStringSlice(go_slice);
-
-    free(go_candidates.data);
-    go_candidates.data = nullptr;
     return vec;
 }
 
@@ -146,9 +131,6 @@ std::vector<std::string> GetLanguagesByEmacsModeline(std::string_view filename, 
     GoSlice go_slice{};
     GetLanguagesByEmacsModeline(to_GoString(filename), to_GoByteSlice(content), go_candidates, &go_slice);
     std::vector<std::string> vec = from_GoStringSlice(go_slice);
-
-    free(go_candidates.data);
-    go_candidates.data = nullptr;
     return vec;
 }
 
@@ -158,9 +140,6 @@ std::vector<std::string> GetLanguagesByExtension(std::string_view filename, std:
     GoSlice go_slice{};
     GetLanguagesByExtension(to_GoString(filename), to_GoByteSlice(content), go_candidates, &go_slice);
     std::vector<std::string> vec = from_GoStringSlice(go_slice);
-
-    free(go_candidates.data);
-    go_candidates.data = nullptr;
     return vec;
 }
 
@@ -170,9 +149,6 @@ std::vector<std::string> GetLanguagesByFilename(std::string_view filename, std::
     GoSlice go_slice{};
     GetLanguagesByFilename(to_GoString(filename), to_GoByteSlice(content), go_candidates, &go_slice);
     std::vector<std::string> vec = from_GoStringSlice(go_slice);
-
-    free(go_candidates.data);
-    go_candidates.data = nullptr;
     return vec;
 }
 
@@ -182,9 +158,6 @@ std::vector<std::string> GetLanguagesByModeline(std::string_view filename, std::
     GoSlice go_slice{};
     GetLanguagesByModeline(to_GoString(filename), to_GoByteSlice(content), go_candidates, &go_slice);
     std::vector<std::string> vec = from_GoStringSlice(go_slice);
-
-    free(go_candidates.data);
-    go_candidates.data = nullptr;
     return vec;
 }
 
@@ -194,9 +167,6 @@ std::vector<std::string> GetLanguagesByShebang(std::string_view filename, std::s
     GoSlice go_slice{};
     GetLanguagesByShebang(to_GoString(filename), to_GoByteSlice(content), go_candidates, &go_slice);
     std::vector<std::string> vec = from_GoStringSlice(go_slice);
-
-    free(go_candidates.data);
-    go_candidates.data = nullptr;
     return vec;
 }
 
@@ -206,9 +176,6 @@ std::vector<std::string> GetLanguagesByVimModeline(std::string_view filename, st
     GoSlice go_slice{};
     GetLanguagesByVimModeline(to_GoString(filename), to_GoByteSlice(content), go_candidates, &go_slice);
     std::vector<std::string> vec = from_GoStringSlice(go_slice);
-
-    free(go_candidates.data);
-    go_candidates.data = nullptr;
     return vec;
 }
 
