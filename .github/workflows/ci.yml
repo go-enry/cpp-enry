@@ -1,14 +1,28 @@
 name: Build and test
-on: [ push ]
+on: [ push, pull_request ]
 
 jobs:
   test:
-    name: CC=${{ matrix.cxx }}, ${{ matrix.go }}, ${{ matrix.os }}
+    name: CXX=${{ matrix.cxx }}, GO=${{ matrix.go }}, ${{ matrix.info }}
     strategy:
       matrix:
         include: [
-          { os: ubuntu-latest, cxx: g++,     go: 1.19.x },
-          { os: ubuntu-latest, cxx: clang++, go: 1.19.x},
+          {
+            os: ubuntu-latest,
+            cxx: g++,
+            cxx-flags: -O1 -g,
+            go: 1.19.x,
+            run: valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all,
+            info: Valgrind
+          },
+          {
+            os: ubuntu-latest,
+            cxx: clang++,
+            cxx-flags: -g3 -ggdb3 -fstack-protector-strong -fsanitize=address -fno-omit-frame-pointer,
+            go: 1.19.x,
+            run: 'ASAN_OPTIONS=detect_container_overflow=0:detect_leaks=1:strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1',
+            info: ASan
+          },
         ]
     runs-on: ${{ matrix.os }}
     env:
@@ -26,8 +40,7 @@ jobs:
     - name: Apt-get install
       run: |
         sudo apt-get update
-        sudo apt-get install gcc-multilib
-        sudo apt-get install valgrind
+        sudo apt-get install gcc-multilib valgrind
 
     - name: Build go-enry as a (static) C library
       run: |
@@ -37,5 +50,5 @@ jobs:
 
     - name: Test with C++ bindings
       run: |
-        g++ enry_test.cpp ./go-enry/go-enry.a --std=c++17 -O2 -Wall -I. -I./go-enry -lpthread
-        valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./a.out
+        ${{matrix.cxx}} enry_test.cpp ./go-enry/go-enry.a --std=c++17 ${{matrix.cxx-flags}} -Wall -Werror -I. -I./go-enry -lpthread
+        ${{matrix.run}} ./a.out
